@@ -48,6 +48,11 @@ async function run() {
 
     //artworks api
 
+    app.get("/allArtWorks", async (req, res) => {
+      const result = await allArtWorksCollection.find().toArray();
+      res.send(result);
+    });
+
     app.post("/allArtWorks", async (req, res) => {
       const newArt = req.body;
       const result = await allArtWorksCollection.insertOne(newArt);

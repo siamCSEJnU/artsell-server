@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+require("dotenv").config();
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 
 const app = express();
 const port = process.env.PORT || "5000";
@@ -9,11 +10,7 @@ const port = process.env.PORT || "5000";
 app.use(cors());
 app.use(express.json());
 
-// artsellUser
-// e29UoWdM0CaMLvGI
-
-const uri =
-  "mongodb+srv://artsellUser:e29UoWdM0CaMLvGI@cluster0.2jfyhqy.mongodb.net/?retryWrites=true&w=majority";
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.2jfyhqy.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -35,6 +32,12 @@ async function run() {
       .collection("allArtWorks");
 
     //users api
+
+    app.get("/allUsers", async (req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result);
+    });
+
     app.post("/users", async (req, res) => {
       const user = req.body;
       const query = { email: user.email };
@@ -56,6 +59,47 @@ async function run() {
     app.post("/allArtWorks", async (req, res) => {
       const newArt = req.body;
       const result = await allArtWorksCollection.insertOne(newArt);
+      res.send(result);
+    });
+
+    //bidding api
+    app.post("/updateBiddingInfo/:artId", async (req, res) => {
+      const artId = req.params.artId;
+      const newBiddingInfo = req.body;
+
+      const filter = { _id: new ObjectId(artId) };
+      const document = await allArtWorksCollection.findOne(filter);
+
+      if (!document.bidding_info) {
+        // Field hasn't been renamed, rename it first
+        const renameUpdate = {
+          $rename: { bidding_prices: "bidding_info" },
+        };
+
+        await allArtWorksCollection.updateOne(filter, renameUpdate);
+      }
+
+      // Now perform the push operation to append newBiddingInfo
+      const setUpdate = {
+        $push: { bidding_info: newBiddingInfo },
+      };
+
+      const setResult = await allArtWorksCollection.updateOne(
+        filter,
+        setUpdate,
+        { returnDocument: "after" }
+      );
+
+      res.send(setResult);
+    });
+
+    //verification of client/admin/artists
+
+    app.get("/users/client/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { client: user?.role === "client" };
       res.send(result);
     });
 

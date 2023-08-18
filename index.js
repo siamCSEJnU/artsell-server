@@ -102,6 +102,67 @@ async function run() {
       const result = { client: user?.role === "client" };
       res.send(result);
     });
+    app.get("/users/admin/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = { admin: user?.role === "admin" };
+      res.send(result);
+    });
+    app.get("/users/artist/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await usersCollection.findOne(query);
+      const result = {
+        artist: user?.role !== "admin" && user?.role !== "client",
+      };
+      res.send(result);
+    });
+
+    //update artworks
+    app.patch("/allArtWorks/update/:artId", async (req, res) => {
+      const id = req.params.artId;
+      const filter = { _id: new ObjectId(id) };
+      const {
+        art_name,
+        base_price,
+        owner_name,
+        owner_email,
+        owner_location,
+        art_size,
+        date_of_upload,
+        description,
+        validity,
+      } = req.body;
+
+      // Build the update operation using the $set operator
+      const updatedArtWork = {
+        $set: {
+          art_name,
+          base_price: parseFloat(base_price),
+          owner_name,
+          owner_email,
+          owner_location,
+          art_size,
+          date_of_upload,
+          description,
+          validity,
+        },
+      };
+      const result = await allArtWorksCollection.updateOne(
+        filter,
+        updatedArtWork
+      );
+      res.send(result);
+    });
+
+    //deleteArtWork
+    app.delete("/allArtWorks/delete/:artId", async (req, res) => {
+      const id = req.params.artId;
+      const filter = { _id: new ObjectId(id) };
+      const result = await allArtWorksCollection.deleteOne(filter);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

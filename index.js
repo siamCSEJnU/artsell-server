@@ -119,6 +119,19 @@ async function run() {
       res.send(result);
     });
 
+    //user role updation
+    app.patch("/users/admin/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          role: "admin",
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
     //update artworks
     app.patch("/allArtWorks/update/:artId", async (req, res) => {
       const id = req.params.artId;
@@ -130,7 +143,7 @@ async function run() {
         owner_email,
         owner_location,
         art_size,
-        date_of_upload,
+        bidding_status,
         description,
         validity,
       } = req.body;
@@ -144,7 +157,7 @@ async function run() {
           owner_email,
           owner_location,
           art_size,
-          date_of_upload,
+          bidding_status,
           description,
           validity,
         },
@@ -156,11 +169,67 @@ async function run() {
       res.send(result);
     });
 
+    //accept artwork
+    app.patch("/allArtWorks/accept/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          status: "accepted",
+        },
+      };
+      const result = await allArtWorksCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    //reject artwork
+
+    app.patch("/allArtWorks/reject/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
+          status: "denied",
+        },
+      };
+      const result = await allArtWorksCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    });
+
+    app.patch("/followers/follow/:artistId/:userEmail", async (req, res) => {
+      const userEmail = req.params.userEmail;
+      const artistId = req.params.artistId;
+      const filter = { _id: new ObjectId(artistId) };
+      const updateDoc = {
+        $addToSet: { followers: userEmail },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    app.patch("/followers/unfollow/:artistId/:userEmail", async (req, res) => {
+      const userEmail = req.params.userEmail;
+      const artistId = req.params.artistId;
+      const filter = { _id: new ObjectId(artistId) };
+      const updateDoc = {
+        $pull: { followers: userEmail },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
     //deleteArtWork
     app.delete("/allArtWorks/delete/:artId", async (req, res) => {
       const id = req.params.artId;
       const filter = { _id: new ObjectId(id) };
       const result = await allArtWorksCollection.deleteOne(filter);
+      res.send(result);
+    });
+
+    //deleteUser
+    app.delete("/allUsers/delete/:userId", async (req, res) => {
+      const id = req.params.userId;
+      const filter = { _id: new ObjectId(id) };
+      const result = await usersCollection.deleteOne(filter);
       res.send(result);
     });
 
